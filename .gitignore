@@ -1,0 +1,4 @@
+pkg/
+npm/
+.vscode/
+*.DS_Store

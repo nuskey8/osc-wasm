@@ -1,0 +1,25 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const __wbg_wasmoscarg_free: (a: number, b: number) => void;
+export const __wbg_get_wasmoscarg_type: (a: number) => [number, number];
+export const __wbg_set_wasmoscarg_type: (a: number, b: number, c: number) => void;
+export const __wbg_get_wasmoscarg_value: (a: number) => any;
+export const __wbg_set_wasmoscarg_value: (a: number, b: any) => void;
+export const wasmoscarg_new: (a: number, b: number, c: any) => number;
+export const __wbg_wasmoscmessage_free: (a: number, b: number) => void;
+export const __wbg_get_wasmoscmessage_address: (a: number) => [number, number];
+export const __wbg_get_wasmoscmessage_args: (a: number) => [number, number];
+export const __wbg_set_wasmoscmessage_args: (a: number, b: number, c: number) => void;
+export const wasmoscmessage_new: (a: number, b: number, c: number, d: number) => number;
+export const encode_osc_message: (a: number) => [number, number, number, number];
+export const decode_osc_message: (a: number, b: number) => [number, number, number];
+export const __wbg_set_wasmoscmessage_address: (a: number, b: number, c: number) => void;
+export const __wbindgen_malloc: (a: number, b: number) => number;
+export const __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+export const __wbindgen_export_2: WebAssembly.Table;
+export const __wbindgen_free: (a: number, b: number, c: number) => void;
+export const __externref_drop_slice: (a: number, b: number) => void;
+export const __externref_table_alloc: () => number;
+export const __externref_table_dealloc: (a: number) => void;
+export const __wbindgen_start: () => void;
