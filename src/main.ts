@@ -21,6 +21,7 @@ interface OscPort {
   on(event: "ready", callback: () => void): void;
   on(event: "message", callback: (msg: OscMessage) => void): void;
   on(event: "bundle", callback: (msg: OscBundle) => void): void;
+  on(event: "error", callback: (msg: unknown) => void): void;
   send(msg: OscMessage | OscBundle): void;
 }
 
