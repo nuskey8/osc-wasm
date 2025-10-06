@@ -52,7 +52,6 @@ await build({
   shims: {
     blob: true,
     webSocket: true,
-    undici: true,
   },
   scriptModule: false,
 });
