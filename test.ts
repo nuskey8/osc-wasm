@@ -13,7 +13,7 @@ const ac = new AbortController();
 function handler(req: Request) {
   try {
     const { socket, response } = Deno.upgradeWebSocket(req);
-    const port = osc.WebSocketPort({ url, socket });
+    const port = osc.WebSocketPort({ url, socket, protocol: "tcp" });
 
     port.on("message", (msg) => {
       try {
@@ -47,6 +47,7 @@ console.log(`[server] listening ${url}`);
 // Create client
 const oscPort = osc.WebSocketPort({
   url,
+  protocol: "tcp",
 });
 
 oscPort.open();

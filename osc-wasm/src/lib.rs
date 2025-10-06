@@ -44,105 +44,140 @@ pub enum WasmOscPacket {
     Bundle(WasmOscBundle),
 }
 
+#[derive(Tsify, Serialize, Deserialize, Clone)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+#[serde(rename_all = "lowercase")]
+pub enum WasmOscProtocol {
+    UDP,
+    TCP,
+}
+
+#[derive(Tsify, Serialize, Deserialize, Clone, Default)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+pub struct WasmEncodeOptions {
+    pub protocol: Option<WasmOscProtocol>,
+}
+
 #[wasm_bindgen]
-pub fn encode(packet: WasmOscPacket) -> Result<Vec<u8>, JsValue> {
+pub fn encode(
+    packet: WasmOscPacket,
+    options: Option<WasmEncodeOptions>,
+) -> Result<Vec<u8>, JsValue> {
     match packet {
-        WasmOscPacket::Message(msg) => encode_message(msg),
-        WasmOscPacket::Bundle(bundle) => encode_bundle(bundle),
+        WasmOscPacket::Message(msg) => encode_message(msg, options),
+        WasmOscPacket::Bundle(bundle) => encode_bundle(bundle, options),
     }
 }
 
 #[wasm_bindgen]
-pub fn decode(data: &[u8]) -> Result<WasmOscPacket, JsValue> {
-    let (_remainder, packet) =
-        rosc::decoder::decode_udp(data).map_err(|e| JsValue::from_str(&e.to_string()))?;
-
-    match packet {
-        OscPacket::Message(msg) => {
-            let args: Vec<WasmOscArg> = msg
-                .args
-                .into_iter()
-                .map(|arg| match arg {
-                    OscType::String(s) => WasmOscArg {
-                        type_: "s".to_string(),
-                        value: WasmOscValue::String(s),
-                    },
-                    OscType::Blob(b) => WasmOscArg {
-                        type_: "b".to_string(),
-                        value: WasmOscValue::Blob(b),
-                    },
-                    OscType::Float(f) => WasmOscArg {
-                        type_: "f".to_string(),
-                        value: WasmOscValue::Float(f),
-                    },
-                    OscType::Int(i) => WasmOscArg {
-                        type_: "i".to_string(),
-                        value: WasmOscValue::Int(i),
-                    },
-                    _ => WasmOscArg {
-                        type_: "unknown".to_string(),
-                        value: WasmOscValue::String(String::new()),
-                    },
-                })
-                .collect();
-
-            Ok(WasmOscPacket::Message(WasmOscMessage {
-                address: msg.addr,
-                args,
-            }))
+pub fn decode(
+    data: &[u8],
+    options: Option<WasmEncodeOptions>,
+) -> Result<Vec<WasmOscPacket>, JsValue> {
+    let options = options.unwrap_or(WasmEncodeOptions::default());
+    let (_remainder, packets) = match options.protocol.unwrap_or(WasmOscProtocol::UDP) {
+        WasmOscProtocol::UDP => {
+            let (_remainder, packet) =
+                rosc::decoder::decode_udp(data).map_err(|e| JsValue::from_str(&e.to_string()))?;
+            (_remainder, vec![packet])
         }
-        OscPacket::Bundle(b) => {
-            let secs = b.timetag.seconds as f64;
-            let frac = (b.timetag.fractional as f64) / (u32::MAX as f64);
-            let time_tag = secs + frac;
+        WasmOscProtocol::TCP => {
+            rosc::decoder::decode_tcp_vec(data).map_err(|e| JsValue::from_str(&e.to_string()))?
+        }
+    };
 
-            let mut packets: Vec<WasmOscMessage> = Vec::new();
-            for content in b.content {
-                match content {
-                    OscPacket::Message(msg) => {
-                        let args: Vec<WasmOscArg> = msg
-                            .args
-                            .into_iter()
-                            .map(|arg| match arg {
-                                OscType::String(s) => WasmOscArg {
-                                    type_: "s".to_string(),
-                                    value: WasmOscValue::String(s),
-                                },
-                                OscType::Blob(b) => WasmOscArg {
-                                    type_: "b".to_string(),
-                                    value: WasmOscValue::Blob(b),
-                                },
-                                OscType::Float(f) => WasmOscArg {
-                                    type_: "f".to_string(),
-                                    value: WasmOscValue::Float(f),
-                                },
-                                OscType::Int(i) => WasmOscArg {
-                                    type_: "i".to_string(),
-                                    value: WasmOscValue::Int(i),
-                                },
-                                _ => WasmOscArg {
-                                    type_: "unknown".to_string(),
-                                    value: WasmOscValue::String(String::new()),
-                                },
-                            })
-                            .collect();
-                        packets.push(WasmOscMessage {
-                            address: msg.addr,
-                            args,
-                        });
-                    }
-                    _ => {
-                        // ignore nested bundles for now
+    packets
+        .into_iter()
+        .map(|packet| match packet {
+            OscPacket::Message(msg) => {
+                let args: Vec<WasmOscArg> = msg
+                    .args
+                    .into_iter()
+                    .map(|arg| match arg {
+                        OscType::String(s) => WasmOscArg {
+                            type_: "s".to_string(),
+                            value: WasmOscValue::String(s),
+                        },
+                        OscType::Blob(b) => WasmOscArg {
+                            type_: "b".to_string(),
+                            value: WasmOscValue::Blob(b),
+                        },
+                        OscType::Float(f) => WasmOscArg {
+                            type_: "f".to_string(),
+                            value: WasmOscValue::Float(f),
+                        },
+                        OscType::Int(i) => WasmOscArg {
+                            type_: "i".to_string(),
+                            value: WasmOscValue::Int(i),
+                        },
+                        _ => WasmOscArg {
+                            type_: "unknown".to_string(),
+                            value: WasmOscValue::String(String::new()),
+                        },
+                    })
+                    .collect();
+
+                Ok(WasmOscPacket::Message(WasmOscMessage {
+                    address: msg.addr,
+                    args,
+                }))
+            }
+            OscPacket::Bundle(b) => {
+                let secs = b.timetag.seconds as f64;
+                let frac = (b.timetag.fractional as f64) / (u32::MAX as f64);
+                let time_tag = secs + frac;
+
+                let mut packets: Vec<WasmOscMessage> = Vec::new();
+                for content in b.content {
+                    match content {
+                        OscPacket::Message(msg) => {
+                            let args: Vec<WasmOscArg> = msg
+                                .args
+                                .into_iter()
+                                .map(|arg| match arg {
+                                    OscType::String(s) => WasmOscArg {
+                                        type_: "s".to_string(),
+                                        value: WasmOscValue::String(s),
+                                    },
+                                    OscType::Blob(b) => WasmOscArg {
+                                        type_: "b".to_string(),
+                                        value: WasmOscValue::Blob(b),
+                                    },
+                                    OscType::Float(f) => WasmOscArg {
+                                        type_: "f".to_string(),
+                                        value: WasmOscValue::Float(f),
+                                    },
+                                    OscType::Int(i) => WasmOscArg {
+                                        type_: "i".to_string(),
+                                        value: WasmOscValue::Int(i),
+                                    },
+                                    _ => WasmOscArg {
+                                        type_: "unknown".to_string(),
+                                        value: WasmOscValue::String(String::new()),
+                                    },
+                                })
+                                .collect();
+                            packets.push(WasmOscMessage {
+                                address: msg.addr,
+                                args,
+                            });
+                        }
+                        _ => {
+                            // ignore nested bundles for now
+                        }
                     }
                 }
-            }
 
-            Ok(WasmOscPacket::Bundle(WasmOscBundle { time_tag, packets }))
-        }
-    }
+                Ok(WasmOscPacket::Bundle(WasmOscBundle { time_tag, packets }))
+            }
+        })
+        .collect()
 }
 
-fn encode_message(msg: WasmOscMessage) -> Result<Vec<u8>, JsValue> {
+fn encode_message(
+    msg: WasmOscMessage,
+    options: Option<WasmEncodeOptions>,
+) -> Result<Vec<u8>, JsValue> {
     let osc_args: Vec<OscType> = msg
         .args
         .into_iter()
@@ -158,10 +193,19 @@ fn encode_message(msg: WasmOscMessage) -> Result<Vec<u8>, JsValue> {
         args: osc_args,
     };
     let packet = OscPacket::Message(osc_msg);
-    rosc::encoder::encode(&packet).map_err(|e| JsValue::from_str(&e.to_string()))
+
+    let options = options.unwrap_or(WasmEncodeOptions::default());
+    match options.protocol.unwrap_or(WasmOscProtocol::UDP) {
+        WasmOscProtocol::UDP => rosc::encoder::encode(&packet),
+        WasmOscProtocol::TCP => rosc::encoder::encode_tcp(&packet),
+    }
+    .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
-fn encode_bundle(bundle: WasmOscBundle) -> Result<Vec<u8>, JsValue> {
+fn encode_bundle(
+    bundle: WasmOscBundle,
+    options: Option<WasmEncodeOptions>,
+) -> Result<Vec<u8>, JsValue> {
     let seconds = bundle.time_tag.trunc() as u32;
     let fractional = ((bundle.time_tag.fract()) * (u32::MAX as f64)) as u32;
     let timetag = rosc::OscTime {
@@ -192,5 +236,11 @@ fn encode_bundle(bundle: WasmOscBundle) -> Result<Vec<u8>, JsValue> {
         timetag,
         content: contents,
     });
-    rosc::encoder::encode(&bundle_packet).map_err(|e| JsValue::from_str(&e.to_string()))
+
+    let options = options.unwrap_or(WasmEncodeOptions::default());
+    match options.protocol.unwrap_or(WasmOscProtocol::UDP) {
+        WasmOscProtocol::UDP => rosc::encoder::encode(&bundle_packet),
+        WasmOscProtocol::TCP => rosc::encoder::encode_tcp(&bundle_packet),
+    }
+    .map_err(|e| JsValue::from_str(&e.to_string()))
 }

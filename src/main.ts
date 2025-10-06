@@ -11,8 +11,11 @@ import {
 
 await init();
 
+type OscProtocol = "udp" | "tcp";
+
 interface WebSocketPortOptions {
   url: string;
+  protocol?: OscProtocol;
   socket?: WebSocket;
 }
 
@@ -43,41 +46,50 @@ interface OscBundle {
   packets: OscMessage[];
 }
 
-function decode(data: Uint8Array): OscMessage | OscBundle {
-  const result = nativeDecode(data);
-  switch (result.type) {
-    case "message": {
-      const message = result as WasmOscMessage;
-      return {
-        address: message.address,
-        args: message.args.map((x) => {
-          return {
-            type: x.type as OscType,
-            value: wasmValueToOscValue(x.value),
-          } satisfies OscArg;
-        }),
-      };
+interface OscEncodeOptions {
+  protocol?: OscProtocol;
+}
+
+function decode(
+  data: Uint8Array,
+  options?: OscEncodeOptions,
+): (OscMessage | OscBundle)[] {
+  const packets = nativeDecode(data, options);
+  return packets.map((packet) => {
+    switch (packet.type) {
+      case "message": {
+        const message = packet as WasmOscMessage;
+        return {
+          address: message.address,
+          args: message.args.map((x) => {
+            return {
+              type: x.type as OscType,
+              value: wasmValueToOscValue(x.value),
+            } satisfies OscArg;
+          }),
+        };
+      }
+      case "bundle": {
+        const bundle = packet as WasmOscBundle;
+        return {
+          timeTag: bundle.timeTag,
+          packets: bundle.packets.map((x) => {
+            return {
+              address: x.address,
+              args: x.args.map((y) => {
+                return {
+                  type: y.type as OscType,
+                  value: wasmValueToOscValue(y.value),
+                } satisfies OscArg;
+              }),
+            } satisfies OscMessage;
+          }),
+        };
+      }
+      default:
+        throw new Error("unsupported osc value");
     }
-    case "bundle": {
-      const bundle = result as WasmOscBundle;
-      return {
-        timeTag: bundle.timeTag,
-        packets: bundle.packets.map((x) => {
-          return {
-            address: x.address,
-            args: x.args.map((y) => {
-              return {
-                type: y.type as OscType,
-                value: wasmValueToOscValue(y.value),
-              } satisfies OscArg;
-            }),
-          } satisfies OscMessage;
-        }),
-      };
-    }
-    default:
-      throw new Error("unsupported osc value");
-  }
+  });
 }
 
 function wasmValueToOscValue(v: WasmOscValue): OscValue {
@@ -98,7 +110,10 @@ function oscValueToWasmValue(v: OscValue, type: OscType): WasmOscValue {
   throw new Error("unsupported osc value");
 }
 
-function encode(data: OscMessage | OscBundle): Uint8Array {
+function encode(
+  data: OscMessage | OscBundle,
+  options?: OscEncodeOptions,
+): Uint8Array {
   if ((data as OscBundle).packets) {
     const bundle = data as OscBundle;
     return nativeEncode({
@@ -111,7 +126,7 @@ function encode(data: OscMessage | OscBundle): Uint8Array {
           value: oscValueToWasmValue(y.value, y.type),
         } satisfies WasmOscArg)),
       } satisfies WasmOscMessage)),
-    });
+    }, options);
   } else {
     const message = data as OscMessage;
     return nativeEncode({
@@ -121,7 +136,7 @@ function encode(data: OscMessage | OscBundle): Uint8Array {
         type: y.type as OscType,
         value: oscValueToWasmValue(y.value, y.type),
       } satisfies WasmOscArg)),
-    });
+    }, options);
   }
 }
 
@@ -151,13 +166,15 @@ function WebSocketPort(options: WebSocketPortOptions): OscPort {
       }
 
       if (bytes) {
-        const data = decode(bytes);
-        if ((data as OscBundle).packets) {
-          const bundle = data as OscBundle;
-          emit("bundle", bundle);
-        } else {
-          const message = data as OscMessage;
-          emit("message", message);
+        const packets = decode(bytes, { protocol: options.protocol });
+        for (const packet of packets) {
+          if ((packet as OscBundle).packets) {
+            const bundle = packet as OscBundle;
+            emit("bundle", bundle);
+          } else {
+            const message = packet as OscMessage;
+            emit("message", message);
+          }
         }
       }
     };
@@ -205,7 +222,7 @@ function WebSocketPort(options: WebSocketPortOptions): OscPort {
     open() {},
     on,
     send(msg: OscMessage | OscBundle) {
-      const encoded = encode(msg);
+      const encoded = encode(msg, { protocol: options.protocol });
       ws.send(encoded);
     },
   };

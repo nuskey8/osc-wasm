@@ -124,10 +124,11 @@ function getArrayU8FromWasm0(ptr, len) {
 }
 /**
  * @param {WasmOscPacket} packet
+ * @param {WasmEncodeOptions | null} [options]
  * @returns {Uint8Array}
  */
-export function encode(packet) {
-    const ret = wasm.encode(packet);
+export function encode(packet, options) {
+    const ret = wasm.encode(packet, isLikeNone(options) ? 0 : addToExternrefTable0(options));
     if (ret[3]) {
         throw takeFromExternrefTable0(ret[2]);
     }
@@ -142,18 +143,32 @@ function passArray8ToWasm0(arg, malloc) {
     WASM_VECTOR_LEN = arg.length;
     return ptr;
 }
+
+function getArrayJsValueFromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    const mem = getDataViewMemory0();
+    const result = [];
+    for (let i = ptr; i < ptr + 4 * len; i += 4) {
+        result.push(wasm.__wbindgen_export_2.get(mem.getUint32(i, true)));
+    }
+    wasm.__externref_drop_slice(ptr, len);
+    return result;
+}
 /**
  * @param {Uint8Array} data
- * @returns {WasmOscPacket}
+ * @param {WasmEncodeOptions | null} [options]
+ * @returns {WasmOscPacket[]}
  */
-export function decode(data) {
+export function decode(data, options) {
     const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.decode(ptr0, len0);
-    if (ret[2]) {
-        throw takeFromExternrefTable0(ret[1]);
+    const ret = wasm.decode(ptr0, len0, isLikeNone(options) ? 0 : addToExternrefTable0(options));
+    if (ret[3]) {
+        throw takeFromExternrefTable0(ret[2]);
     }
-    return takeFromExternrefTable0(ret[0]);
+    var v2 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v2;
 }
 
 const EXPECTED_RESPONSE_TYPES = new Set(['basic', 'cors', 'default']);

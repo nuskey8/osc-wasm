@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
-export function encode(packet: WasmOscPacket): Uint8Array;
-export function decode(data: Uint8Array): WasmOscPacket;
+export function encode(packet: WasmOscPacket, options?: WasmEncodeOptions | null): Uint8Array;
+export function decode(data: Uint8Array, options?: WasmEncodeOptions | null): WasmOscPacket[];
 export interface WasmOscArg {
     type: string;
     value: WasmOscValue;
@@ -21,13 +21,19 @@ export interface WasmOscBundle {
 
 export type WasmOscPacket = ({ type: "message" } & WasmOscMessage) | ({ type: "bundle" } & WasmOscBundle);
 
+export type WasmOscProtocol = "udp" | "tcp";
+
+export interface WasmEncodeOptions {
+    protocol: WasmOscProtocol | null;
+}
+
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly encode: (a: any) => [number, number, number, number];
-  readonly decode: (a: number, b: number) => [number, number, number];
+  readonly encode: (a: any, b: number) => [number, number, number, number];
+  readonly decode: (a: number, b: number, c: number) => [number, number, number, number];
   readonly __wbindgen_exn_store: (a: number) => void;
   readonly __externref_table_alloc: () => number;
   readonly __wbindgen_export_2: WebAssembly.Table;
@@ -35,6 +41,7 @@ export interface InitOutput {
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __externref_table_dealloc: (a: number) => void;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
+  readonly __externref_drop_slice: (a: number, b: number) => void;
   readonly __wbindgen_start: () => void;
 }
 
