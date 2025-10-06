@@ -1,64 +1,40 @@
 /* tslint:disable */
 /* eslint-disable */
-export function encode_osc_message(msg: WasmOscMessage): Uint8Array;
-export function decode_osc_message(data: Uint8Array): WasmOscMessage;
-export function encode_osc_bundle(bundle: WasmOscBundle): Uint8Array;
-export function decode_osc_bundle(data: Uint8Array): WasmOscBundle;
-export class WasmOscArg {
-  free(): void;
-  [Symbol.dispose](): void;
-  constructor(type_: string, value: any);
-  type: string;
-  value: any;
+export function encode(packet: WasmOscPacket): Uint8Array;
+export function decode(data: Uint8Array): WasmOscPacket;
+export interface WasmOscArg {
+    type: string;
+    value: WasmOscValue;
 }
-export class WasmOscBundle {
-  free(): void;
-  [Symbol.dispose](): void;
-  constructor(time_tag: number, packets: WasmOscMessage[]);
-  timeTag: number;
-  packets: WasmOscMessage[];
+
+export type WasmOscValue = { I: number } | { F: number } | { S: string };
+
+export interface WasmOscMessage {
+    address: string;
+    args: WasmOscArg[];
 }
-export class WasmOscMessage {
-  free(): void;
-  [Symbol.dispose](): void;
-  constructor(addr: string, args: WasmOscArg[]);
-  address: string;
-  args: WasmOscArg[];
+
+export interface WasmOscBundle {
+    timeTag: number;
+    packets: WasmOscMessage[];
 }
+
+export type WasmOscPacket = ({ type: "message" } & WasmOscMessage) | ({ type: "bundle" } & WasmOscBundle);
+
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly __wbg_wasmoscarg_free: (a: number, b: number) => void;
-  readonly __wbg_get_wasmoscarg_type: (a: number) => [number, number];
-  readonly __wbg_set_wasmoscarg_type: (a: number, b: number, c: number) => void;
-  readonly __wbg_get_wasmoscarg_value: (a: number) => any;
-  readonly __wbg_set_wasmoscarg_value: (a: number, b: any) => void;
-  readonly wasmoscarg_new: (a: number, b: number, c: any) => number;
-  readonly __wbg_wasmoscmessage_free: (a: number, b: number) => void;
-  readonly __wbg_get_wasmoscmessage_address: (a: number) => [number, number];
-  readonly __wbg_get_wasmoscmessage_args: (a: number) => [number, number];
-  readonly __wbg_set_wasmoscmessage_args: (a: number, b: number, c: number) => void;
-  readonly wasmoscmessage_new: (a: number, b: number, c: number, d: number) => number;
-  readonly encode_osc_message: (a: number) => [number, number, number, number];
-  readonly decode_osc_message: (a: number, b: number) => [number, number, number];
-  readonly __wbg_wasmoscbundle_free: (a: number, b: number) => void;
-  readonly __wbg_get_wasmoscbundle_timeTag: (a: number) => number;
-  readonly __wbg_set_wasmoscbundle_timeTag: (a: number, b: number) => void;
-  readonly __wbg_get_wasmoscbundle_packets: (a: number) => [number, number];
-  readonly __wbg_set_wasmoscbundle_packets: (a: number, b: number, c: number) => void;
-  readonly wasmoscbundle_new: (a: number, b: number, c: number) => number;
-  readonly encode_osc_bundle: (a: number) => [number, number, number, number];
-  readonly decode_osc_bundle: (a: number, b: number) => [number, number, number];
-  readonly __wbg_set_wasmoscmessage_address: (a: number, b: number, c: number) => void;
+  readonly encode: (a: any) => [number, number, number, number];
+  readonly decode: (a: number, b: number) => [number, number, number];
+  readonly __wbindgen_exn_store: (a: number) => void;
+  readonly __externref_table_alloc: () => number;
+  readonly __wbindgen_export_2: WebAssembly.Table;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
-  readonly __wbindgen_export_2: WebAssembly.Table;
-  readonly __wbindgen_free: (a: number, b: number, c: number) => void;
-  readonly __externref_drop_slice: (a: number, b: number) => void;
-  readonly __externref_table_alloc: () => number;
   readonly __externref_table_dealloc: (a: number) => void;
+  readonly __wbindgen_free: (a: number, b: number, c: number) => void;
   readonly __wbindgen_start: () => void;
 }
 

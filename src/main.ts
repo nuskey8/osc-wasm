@@ -1,12 +1,13 @@
 import init, {
-  decode_osc_bundle,
-  decode_osc_message,
-  encode_osc_bundle,
-  encode_osc_message,
-  WasmOscArg,
-  WasmOscMessage,
+  decode as nativeDecode,
+  encode as nativeEncode,
 } from "../pkg/osc_wasm.js";
-import { WasmOscBundle } from "./osc_wasm.js";
+import {
+  WasmOscArg,
+  WasmOscBundle,
+  WasmOscMessage,
+  WasmOscValue,
+} from "../pkg/osc_wasm.d.ts";
 
 await init();
 
@@ -37,63 +38,88 @@ interface OscArg {
 }
 
 interface OscBundle {
-  timeTag: number; // seconds (floating)
+  timeTag: number;
   packets: OscMessage[];
 }
 
-function decodeMessage(data: Uint8Array): OscMessage {
-  const result = decode_osc_message(data);
-  return {
-    address: result.address,
-    args: result.args.map((x) => {
+function decode(data: Uint8Array): OscMessage | OscBundle {
+  const result = nativeDecode(data);
+  switch (result.type) {
+    case "message": {
+      const message = result as WasmOscMessage;
       return {
-        type: x.type as OscType,
-        value: x.value as OscValue,
-      } satisfies OscArg;
-    }),
-  };
-}
-
-function decodeBundle(data: Uint8Array): OscBundle {
-  const result = decode_osc_bundle(data);
-  return {
-    timeTag: result.timeTag,
-    packets: result.packets.map((p) => {
-      return {
-        address: p.address,
-        args: p.args.map((x) => {
+        address: message.address,
+        args: message.args.map((x) => {
           return {
             type: x.type as OscType,
-            value: x.value as OscValue,
+            value: wasmValueToOscValue(x.value),
           } satisfies OscArg;
         }),
-      } satisfies OscMessage;
-    }),
-  };
+      };
+    }
+    case "bundle": {
+      const bundle = result as WasmOscBundle;
+      return {
+        timeTag: bundle.timeTag,
+        packets: bundle.packets.map((x) => {
+          return {
+            address: x.address,
+            args: x.args.map((y) => {
+              return {
+                type: y.type as OscType,
+                value: wasmValueToOscValue(y.value),
+              } satisfies OscArg;
+            }),
+          } satisfies OscMessage;
+        }),
+      };
+    }
+    default:
+      throw new Error("unsupported osc value");
+  }
 }
 
-function encodeMessage(msg: OscMessage): Uint8Array {
-  const data = new WasmOscMessage(
-    msg.address,
-    msg.args.map((x) => {
-      return new WasmOscArg(x.type, x.value);
-    }),
-  );
-  return encode_osc_message(data);
+function wasmValueToOscValue(v: WasmOscValue): OscValue {
+  // WasmOscValue = { I: number } | { F: number } | { S: string }
+  if (v && typeof v === "object") {
+    if ("I" in v) return v.I as number;
+    if ("F" in v) return v.F as number;
+    if ("S" in v) return v.S as string;
+  }
+  return "";
 }
 
-function encodeBundle(bundle: OscBundle): Uint8Array {
-  const data = new WasmOscBundle(
-    bundle.timeTag,
-    bundle.packets.map((p) => {
-      return new WasmOscMessage(
-        p.address,
-        p.args.map((x) => new WasmOscArg(x.type, x.value)),
-      );
-    }),
-  );
+function oscValueToWasmValue(v: OscValue, type: OscType): WasmOscValue {
+  if (type === "i") return { I: Number(v) };
+  if (type === "f") return { F: Number(v) };
+  return { S: String(v) };
+}
 
-  return encode_osc_bundle(data);
+function encode(data: OscMessage | OscBundle): Uint8Array {
+  if ((data as OscBundle).packets) {
+    const bundle = data as OscBundle;
+    return nativeEncode({
+      type: "bundle",
+      timeTag: bundle.timeTag,
+      packets: bundle.packets.map((x) => ({
+        address: x.address,
+        args: x.args.map((y) => ({
+          type: y.type as OscType,
+          value: oscValueToWasmValue(y.value, y.type),
+        } satisfies WasmOscArg)),
+      } satisfies WasmOscMessage)),
+    });
+  } else {
+    const message = data as OscMessage;
+    return nativeEncode({
+      type: "message",
+      address: message.address,
+      args: message.args.map((y) => ({
+        type: y.type as OscType,
+        value: oscValueToWasmValue(y.value, y.type),
+      } satisfies WasmOscArg)),
+    });
+  }
 }
 
 function WebSocketPort(options: WebSocketPortOptions): OscPort {
@@ -122,15 +148,13 @@ function WebSocketPort(options: WebSocketPortOptions): OscPort {
       }
 
       if (bytes) {
-        const td = new TextDecoder();
-        const probeLen = Math.min(7, bytes.length);
-        const header = td.decode(bytes.subarray(0, probeLen));
-        if (header === "#bundle" || header.startsWith("#bundle")) {
-          const b = decodeBundle(bytes);
-          if (b) emit("bundle", b);
+        const data = decode(bytes);
+        if ((data as OscBundle).packets) {
+          const bundle = data as OscBundle;
+          emit("bundle", bundle);
         } else {
-          const msg = decodeMessage(bytes);
-          if (msg) emit("message", msg);
+          const message = data as OscMessage;
+          emit("message", message);
         }
       }
     };
@@ -151,30 +175,31 @@ function WebSocketPort(options: WebSocketPortOptions): OscPort {
     (event: "bundle", callback: (msg: OscBundle) => void): void;
   };
 
-  const on: onMethod = (event: string, callback: any) => {
+  const on: onMethod = (
+    event: "ready" | "message" | "bundle",
+    callback:
+      | (() => void)
+      | ((msg: OscMessage) => void)
+      | ((msg: OscBundle) => void),
+  ) => {
     if (!listeners[event]) listeners[event] = [];
-    listeners[event].push(callback);
+    listeners[event].push(
+      callback as (msg: OscMessage | OscBundle | undefined) => void,
+    );
   };
 
   return {
     open() {},
     on,
     send(msg: OscMessage | OscBundle) {
-      if ((msg as OscBundle).timeTag) {
-        const encoded = encodeBundle(msg as OscBundle);
-        ws.send(encoded);
-      } else {
-        const encoded = encodeMessage(msg as OscMessage);
-        ws.send(encoded);
-      }
+      const encoded = encode(msg);
+      ws.send(encoded);
     },
   };
 }
 
 export const osc = {
   WebSocketPort,
-  encodeMessage,
-  decodeMessage,
-  encodeBundle,
-  decodeBundle,
+  encode,
+  decode,
 };
