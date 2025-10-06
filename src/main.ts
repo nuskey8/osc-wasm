@@ -2,7 +2,7 @@ import init, {
   decode as nativeDecode,
   encode as nativeEncode,
 } from "../pkg/osc_wasm.js";
-import {
+import type {
   WasmOscArg,
   WasmOscBundle,
   WasmOscMessage,
@@ -153,7 +153,7 @@ function WebSocketPort(options: WebSocketPortOptions): OscPort {
   };
 
   ws.onmessage = (event) => {
-    const handleData = async (data: ArrayBuffer | Blob | string) => {
+    const handleData = async (data: ArrayBuffer | Blob | string | any) => {
       let bytes: Uint8Array | null = null;
       if (typeof data === "string") {
         const enc = new TextEncoder();

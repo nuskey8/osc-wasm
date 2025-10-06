@@ -1,10 +1,20 @@
 {
+  "name": "@nuskey8/osc-wasm",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Open Sound Control (OSC) library implemented in WebAssembly/Rust for browsers and servers",
+  "exports": "./src/index.ts",
   "tasks": {
     "dev": "deno run --watch src/main.ts",
-    "build-wasm": "wasm-pack build osc-wasm --target web --out-dir ../pkg --release && deno run --allow-read --allow-write build_wasm.ts"
+    "build-wasm": "wasm-pack build osc-wasm --target web --out-dir ../pkg --release && deno run --allow-read --allow-write build_wasm.ts",
+    "build-npm": "deno run -A build_npm.ts"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1",
-    "@std/fs": "jsr:@std/fs@1"
+    "@std/fs": "jsr:@std/fs@1",
+    "@std/path": "https://deno.land/std@0.201.0/path/mod.ts",
+    "@std/fs/ensure_dir": "https://deno.land/std@0.201.0/fs/ensure_dir.ts",
+    "@std/fs/exists": "https://deno.land/std@0.201.0/fs/exists.ts",
+    "dnt": "https://deno.land/x/dnt@0.38.0/mod.ts"
   }
 }
