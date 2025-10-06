@@ -25,6 +25,7 @@ export interface OscPort {
   on(event: "message", callback: (msg: OscMessage) => void): void;
   on(event: "bundle", callback: (msg: OscBundle) => void): void;
   on(event: "error", callback: (msg: unknown) => void): void;
+  on(event: "close", callback: () => void): void;
   send(msg: OscMessage | OscBundle): void;
 }
 
@@ -152,6 +153,10 @@ function WebSocketPort(options: WebSocketPortOptions): OscPort {
     emit("ready");
   };
 
+  ws.onclose = () => {
+    emit("close");
+  };
+
   ws.onmessage = (event) => {
     const handleData = async (data: ArrayBuffer | Blob | string | any) => {
       let bytes: Uint8Array | null = null;
@@ -202,10 +207,11 @@ function WebSocketPort(options: WebSocketPortOptions): OscPort {
     (event: "message", callback: (msg: OscMessage) => void): void;
     (event: "bundle", callback: (msg: OscBundle) => void): void;
     (event: "error", callback: (error: unknown) => void): void;
+    (event: "close", callback: () => void): void;
   };
 
   const on: onMethod = (
-    event: "ready" | "message" | "bundle" | "error",
+    event: "ready" | "message" | "bundle" | "error" | "close",
     callback:
       | (() => void)
       | ((msg: OscMessage) => void)
