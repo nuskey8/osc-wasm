@@ -6,39 +6,29 @@ import { osc } from "./src/main.ts";
 // - client (osc.WebSocketPort) connects, sends an OSC message and awaits reply
 
 const PORT = 8081;
+const url = `ws://localhost:${PORT}`;
 
 // Start HTTP server that upgrades to WebSocket and handles OSC binary frames
 const ac = new AbortController();
 function handler(req: Request) {
   try {
     const { socket, response } = Deno.upgradeWebSocket(req);
+    const port = osc.WebSocketPort({ url, socket });
 
-    socket.onopen = () => {
-      console.log("[server] socket opened");
-    };
-
-    socket.onmessage = (e) => {
+    port.on("message", (msg) => {
       try {
-        const data = new Uint8Array(e.data as ArrayBuffer);
+        if (msg.address != "/test") return;
+        console.log("[server] received message:", msg);
 
-        // Use osc.decode helper to parse incoming OSC binary messages
-        const decoded = osc.decode(new Uint8Array(data));
-        console.log("[server] decoded:", decoded);
-
-        // Reply with a simple OSC message
-        const encoded = osc.encode({
+        port.send({
           address: "/reply",
           args: [{ type: "s", value: "ok" }],
         });
-
-        console.log(encoded);
-
-        socket.send(encoded);
         console.log("[server] sent reply");
       } catch (err) {
         console.error("[server] message handler error:", err);
       }
-    };
+    });
 
     socket.onclose = () => console.log("[server] socket closed");
     socket.onerror = (ev) => console.error("[server] socket error", ev);
@@ -52,12 +42,11 @@ function handler(req: Request) {
 
 // Start server in background
 Deno.serve({ port: PORT, signal: ac.signal }, handler);
-console.log(`[server] listening ws://localhost:${PORT}`);
+console.log(`[server] listening ${url}`);
 
 // Create client
 const oscPort = osc.WebSocketPort({
-  url: `ws://localhost:${PORT}`,
-  metadata: true,
+  url,
 });
 
 oscPort.open();

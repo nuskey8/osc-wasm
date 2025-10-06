@@ -175,6 +175,35 @@ export function decode_osc_message(data) {
     return WasmOscMessage.__wrap(ret[0]);
 }
 
+/**
+ * @param {WasmOscBundle} bundle
+ * @returns {Uint8Array}
+ */
+export function encode_osc_bundle(bundle) {
+    _assertClass(bundle, WasmOscBundle);
+    const ret = wasm.encode_osc_bundle(bundle.__wbg_ptr);
+    if (ret[3]) {
+        throw takeFromExternrefTable0(ret[2]);
+    }
+    var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+    return v1;
+}
+
+/**
+ * @param {Uint8Array} data
+ * @returns {WasmOscBundle}
+ */
+export function decode_osc_bundle(data) {
+    const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.decode_osc_bundle(ptr0, len0);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return WasmOscBundle.__wrap(ret[0]);
+}
+
 const WasmOscArgFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_wasmoscarg_free(ptr >>> 0, 1));
@@ -258,6 +287,76 @@ export class WasmOscArg {
 }
 if (Symbol.dispose) WasmOscArg.prototype[Symbol.dispose] = WasmOscArg.prototype.free;
 
+const WasmOscBundleFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_wasmoscbundle_free(ptr >>> 0, 1));
+
+export class WasmOscBundle {
+
+    static __wrap(ptr) {
+        ptr = ptr >>> 0;
+        const obj = Object.create(WasmOscBundle.prototype);
+        obj.__wbg_ptr = ptr;
+        WasmOscBundleFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        WasmOscBundleFinalization.unregister(this);
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_wasmoscbundle_free(ptr, 0);
+    }
+    /**
+     * @returns {number}
+     */
+    get timeTag() {
+        const ret = wasm.__wbg_get_wasmoscbundle_timeTag(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @param {number} arg0
+     */
+    set timeTag(arg0) {
+        wasm.__wbg_set_wasmoscbundle_timeTag(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @returns {WasmOscMessage[]}
+     */
+    get packets() {
+        const ret = wasm.__wbg_get_wasmoscbundle_packets(this.__wbg_ptr);
+        var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @param {WasmOscMessage[]} arg0
+     */
+    set packets(arg0) {
+        const ptr0 = passArrayJsValueToWasm0(arg0, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.__wbg_set_wasmoscbundle_packets(this.__wbg_ptr, ptr0, len0);
+    }
+    /**
+     * @param {number} time_tag
+     * @param {WasmOscMessage[]} packets
+     */
+    constructor(time_tag, packets) {
+        const ptr0 = passArrayJsValueToWasm0(packets, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.wasmoscbundle_new(time_tag, ptr0, len0);
+        this.__wbg_ptr = ret >>> 0;
+        WasmOscBundleFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+}
+if (Symbol.dispose) WasmOscBundle.prototype[Symbol.dispose] = WasmOscBundle.prototype.free;
+
 const WasmOscMessageFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_wasmoscmessage_free(ptr >>> 0, 1));
@@ -270,6 +369,13 @@ export class WasmOscMessage {
         obj.__wbg_ptr = ptr;
         WasmOscMessageFinalization.register(obj, obj.__wbg_ptr, obj);
         return obj;
+    }
+
+    static __unwrap(jsValue) {
+        if (!(jsValue instanceof WasmOscMessage)) {
+            return 0;
+        }
+        return jsValue.__destroy_into_raw();
     }
 
     __destroy_into_raw() {
@@ -384,6 +490,14 @@ function __wbg_get_imports() {
     };
     imports.wbg.__wbg_wasmoscarg_unwrap = function(arg0) {
         const ret = WasmOscArg.__unwrap(arg0);
+        return ret;
+    };
+    imports.wbg.__wbg_wasmoscmessage_new = function(arg0) {
+        const ret = WasmOscMessage.__wrap(arg0);
+        return ret;
+    };
+    imports.wbg.__wbg_wasmoscmessage_unwrap = function(arg0) {
+        const ret = WasmOscMessage.__unwrap(arg0);
         return ret;
     };
     imports.wbg.__wbg_wbindgennumberget_f74b4c7525ac05cb = function(arg0, arg1) {

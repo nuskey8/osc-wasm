@@ -2,12 +2,21 @@
 /* eslint-disable */
 export function encode_osc_message(msg: WasmOscMessage): Uint8Array;
 export function decode_osc_message(data: Uint8Array): WasmOscMessage;
+export function encode_osc_bundle(bundle: WasmOscBundle): Uint8Array;
+export function decode_osc_bundle(data: Uint8Array): WasmOscBundle;
 export class WasmOscArg {
   free(): void;
   [Symbol.dispose](): void;
   constructor(type_: string, value: any);
   type: string;
   value: any;
+}
+export class WasmOscBundle {
+  free(): void;
+  [Symbol.dispose](): void;
+  constructor(time_tag: number, packets: WasmOscMessage[]);
+  timeTag: number;
+  packets: WasmOscMessage[];
 }
 export class WasmOscMessage {
   free(): void;
@@ -34,6 +43,14 @@ export interface InitOutput {
   readonly wasmoscmessage_new: (a: number, b: number, c: number, d: number) => number;
   readonly encode_osc_message: (a: number) => [number, number, number, number];
   readonly decode_osc_message: (a: number, b: number) => [number, number, number];
+  readonly __wbg_wasmoscbundle_free: (a: number, b: number) => void;
+  readonly __wbg_get_wasmoscbundle_timeTag: (a: number) => number;
+  readonly __wbg_set_wasmoscbundle_timeTag: (a: number, b: number) => void;
+  readonly __wbg_get_wasmoscbundle_packets: (a: number) => [number, number];
+  readonly __wbg_set_wasmoscbundle_packets: (a: number, b: number, c: number) => void;
+  readonly wasmoscbundle_new: (a: number, b: number, c: number) => number;
+  readonly encode_osc_bundle: (a: number) => [number, number, number, number];
+  readonly decode_osc_bundle: (a: number, b: number) => [number, number, number];
   readonly __wbg_set_wasmoscmessage_address: (a: number, b: number, c: number) => void;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
