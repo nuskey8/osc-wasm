@@ -1,6 +1,6 @@
 {
   "name": "@nuskey8/osc-wasm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "description": "Open Sound Control (OSC) library implemented in WebAssembly/Rust for browsers and servers",
   "exports": "./src/main.ts",
