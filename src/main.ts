@@ -126,7 +126,7 @@ function encode(data: OscMessage | OscBundle): Uint8Array {
 
 function WebSocketPort(options: WebSocketPortOptions): OscPort {
   const listeners: {
-    [event: string]: ((msg: OscMessage | OscBundle | undefined) => void)[];
+    [event: string]: ((msg: OscMessage | OscBundle | unknown) => void)[];
   } = {};
 
   const ws = options.socket ?? new WebSocket(options.url);
@@ -165,9 +165,17 @@ function WebSocketPort(options: WebSocketPortOptions): OscPort {
     void handleData(event.data);
   };
 
-  function emit(event: string, msg?: OscMessage | OscBundle) {
+  function emit(event: string, msg?: OscMessage | OscBundle | unknown) {
     if (listeners[event]) {
-      listeners[event].forEach((callback) => callback(msg));
+      try {
+        listeners[event].forEach((callback) => callback(msg));
+      } catch (e) {
+        if (event === "error") {
+          throw e;
+        } else {
+          emit("error", e);
+        }
+      }
     }
   }
 
@@ -175,18 +183,20 @@ function WebSocketPort(options: WebSocketPortOptions): OscPort {
     (event: "ready", callback: () => void): void;
     (event: "message", callback: (msg: OscMessage) => void): void;
     (event: "bundle", callback: (msg: OscBundle) => void): void;
+    (event: "error", callback: (error: unknown) => void): void;
   };
 
   const on: onMethod = (
-    event: "ready" | "message" | "bundle",
+    event: "ready" | "message" | "bundle" | "error",
     callback:
       | (() => void)
       | ((msg: OscMessage) => void)
-      | ((msg: OscBundle) => void),
+      | ((msg: OscBundle) => void)
+      | ((error: unknown) => void),
   ) => {
     if (!listeners[event]) listeners[event] = [];
     listeners[event].push(
-      callback as (msg: OscMessage | OscBundle | undefined) => void,
+      callback as (msg: OscMessage | OscBundle | unknown | undefined) => void,
     );
   };
 
