@@ -25,7 +25,7 @@ interface OscPort {
 }
 
 type OscType = "i" | "f" | "s" | "b";
-type OscValue = number | string;
+type OscValue = number | string | Uint8Array;
 
 interface OscMessage {
   address: string;
@@ -80,19 +80,21 @@ function decode(data: Uint8Array): OscMessage | OscBundle {
 }
 
 function wasmValueToOscValue(v: WasmOscValue): OscValue {
-  // WasmOscValue = { I: number } | { F: number } | { S: string }
   if (v && typeof v === "object") {
-    if ("I" in v) return v.I as number;
-    if ("F" in v) return v.F as number;
-    if ("S" in v) return v.S as string;
+    if ("Int" in v) return v.Int as number;
+    if ("Float" in v) return v.Float as number;
+    if ("String" in v) return v.String as string;
+    if ("Blob" in v) return new Uint8Array(v.Blob);
   }
-  return "";
+  throw new Error("unsupported osc value");
 }
 
 function oscValueToWasmValue(v: OscValue, type: OscType): WasmOscValue {
-  if (type === "i") return { I: Number(v) };
-  if (type === "f") return { F: Number(v) };
-  return { S: String(v) };
+  if (type === "i") return { Int: v as number };
+  if (type === "f") return { Float: v as number };
+  if (type === "s") return { String: v as string };
+  if (type === "b") return { Blob: Array.from(v as Uint8Array) };
+  throw new Error("unsupported osc value");
 }
 
 function encode(data: OscMessage | OscBundle): Uint8Array {

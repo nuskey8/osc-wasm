@@ -13,9 +13,10 @@ pub struct WasmOscArg {
 
 #[derive(Tsify, Serialize, Deserialize, Clone)]
 pub enum WasmOscValue {
-    I(i32),
-    F(f32),
-    S(String),
+    Int(i32),
+    Float(f32),
+    String(String),
+    Blob(Vec<u8>),
 }
 
 #[derive(Tsify, Serialize, Deserialize, Clone)]
@@ -46,8 +47,8 @@ pub enum WasmOscPacket {
 #[wasm_bindgen]
 pub fn encode(packet: WasmOscPacket) -> Result<Vec<u8>, JsValue> {
     match packet {
-        WasmOscPacket::Message(msg) => encode_message(&msg),
-        WasmOscPacket::Bundle(bundle) => encode_bundle(&bundle),
+        WasmOscPacket::Message(msg) => encode_message(msg),
+        WasmOscPacket::Bundle(bundle) => encode_bundle(bundle),
     }
 }
 
@@ -64,19 +65,23 @@ pub fn decode(data: &[u8]) -> Result<WasmOscPacket, JsValue> {
                 .map(|arg| match arg {
                     OscType::String(s) => WasmOscArg {
                         type_: "s".to_string(),
-                        value: WasmOscValue::S(s),
+                        value: WasmOscValue::String(s),
+                    },
+                    OscType::Blob(b) => WasmOscArg {
+                        type_: "b".to_string(),
+                        value: WasmOscValue::Blob(b),
                     },
                     OscType::Float(f) => WasmOscArg {
                         type_: "f".to_string(),
-                        value: WasmOscValue::F(f),
+                        value: WasmOscValue::Float(f),
                     },
                     OscType::Int(i) => WasmOscArg {
                         type_: "i".to_string(),
-                        value: WasmOscValue::I(i),
+                        value: WasmOscValue::Int(i),
                     },
                     _ => WasmOscArg {
                         type_: "unknown".to_string(),
-                        value: WasmOscValue::S(String::new()),
+                        value: WasmOscValue::String(String::new()),
                     },
                 })
                 .collect();
@@ -101,19 +106,23 @@ pub fn decode(data: &[u8]) -> Result<WasmOscPacket, JsValue> {
                             .map(|arg| match arg {
                                 OscType::String(s) => WasmOscArg {
                                     type_: "s".to_string(),
-                                    value: WasmOscValue::S(s),
+                                    value: WasmOscValue::String(s),
+                                },
+                                OscType::Blob(b) => WasmOscArg {
+                                    type_: "b".to_string(),
+                                    value: WasmOscValue::Blob(b),
                                 },
                                 OscType::Float(f) => WasmOscArg {
                                     type_: "f".to_string(),
-                                    value: WasmOscValue::F(f),
+                                    value: WasmOscValue::Float(f),
                                 },
                                 OscType::Int(i) => WasmOscArg {
                                     type_: "i".to_string(),
-                                    value: WasmOscValue::I(i),
+                                    value: WasmOscValue::Int(i),
                                 },
                                 _ => WasmOscArg {
                                     type_: "unknown".to_string(),
-                                    value: WasmOscValue::S(String::new()),
+                                    value: WasmOscValue::String(String::new()),
                                 },
                             })
                             .collect();
@@ -133,14 +142,15 @@ pub fn decode(data: &[u8]) -> Result<WasmOscPacket, JsValue> {
     }
 }
 
-fn encode_message(msg: &WasmOscMessage) -> Result<Vec<u8>, JsValue> {
+fn encode_message(msg: WasmOscMessage) -> Result<Vec<u8>, JsValue> {
     let osc_args: Vec<OscType> = msg
         .args
-        .iter()
-        .filter_map(|arg| match &arg.value {
-            WasmOscValue::S(s) => Some(OscType::String(s.clone())),
-            WasmOscValue::F(f) => Some(OscType::Float(*f as f32)),
-            WasmOscValue::I(i) => Some(OscType::Int(*i as i32)),
+        .into_iter()
+        .filter_map(|arg| match arg.value {
+            WasmOscValue::String(s) => Some(OscType::String(s)),
+            WasmOscValue::Float(f) => Some(OscType::Float(f)),
+            WasmOscValue::Int(i) => Some(OscType::Int(i)),
+            WasmOscValue::Blob(blob) => Some(OscType::Blob(blob)),
         })
         .collect();
     let osc_msg = RoscMessage {
@@ -151,7 +161,7 @@ fn encode_message(msg: &WasmOscMessage) -> Result<Vec<u8>, JsValue> {
     rosc::encoder::encode(&packet).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
-fn encode_bundle(bundle: &WasmOscBundle) -> Result<Vec<u8>, JsValue> {
+fn encode_bundle(bundle: WasmOscBundle) -> Result<Vec<u8>, JsValue> {
     let seconds = bundle.time_tag.trunc() as u32;
     let fractional = ((bundle.time_tag.fract()) * (u32::MAX as f64)) as u32;
     let timetag = rosc::OscTime {
@@ -160,14 +170,15 @@ fn encode_bundle(bundle: &WasmOscBundle) -> Result<Vec<u8>, JsValue> {
     };
 
     let mut contents: Vec<OscPacket> = Vec::new();
-    for msg in &bundle.packets {
+    for msg in bundle.packets {
         let osc_args: Vec<OscType> = msg
             .args
-            .iter()
-            .filter_map(|arg| match &arg.value {
-                WasmOscValue::S(s) => Some(OscType::String(s.clone())),
-                WasmOscValue::F(f) => Some(OscType::Float(*f as f32)),
-                WasmOscValue::I(i) => Some(OscType::Int(*i as i32)),
+            .into_iter()
+            .filter_map(|arg| match arg.value {
+                WasmOscValue::String(s) => Some(OscType::String(s)),
+                WasmOscValue::Blob(b) => Some(OscType::Blob(b)),
+                WasmOscValue::Float(f) => Some(OscType::Float(f)),
+                WasmOscValue::Int(i) => Some(OscType::Int(i)),
             })
             .collect();
         let osc_msg = RoscMessage {

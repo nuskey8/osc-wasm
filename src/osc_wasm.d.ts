@@ -7,7 +7,7 @@ export interface WasmOscArg {
     value: WasmOscValue;
 }
 
-export type WasmOscValue = { I: number } | { F: number } | { S: string };
+export type WasmOscValue = { Int: number } | { Float: number } | { String: string } | { Blob: number[] };
 
 export interface WasmOscMessage {
     address: string;
