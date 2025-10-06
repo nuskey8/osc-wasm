@@ -11,15 +11,15 @@ import type {
 
 await init();
 
-type OscProtocol = "udp" | "tcp";
+export type OscProtocol = "udp" | "tcp";
 
-interface WebSocketPortOptions {
+export interface WebSocketPortOptions {
   url: string;
   protocol?: OscProtocol;
   socket?: WebSocket;
 }
 
-interface OscPort {
+export interface OscPort {
   open(): void;
   on(event: "ready", callback: () => void): void;
   on(event: "message", callback: (msg: OscMessage) => void): void;
@@ -28,25 +28,25 @@ interface OscPort {
   send(msg: OscMessage | OscBundle): void;
 }
 
-type OscType = "i" | "f" | "s" | "b";
-type OscValue = number | string | Uint8Array;
+export type OscType = "i" | "f" | "s" | "b";
+export type OscValue = number | string | Uint8Array;
 
-interface OscMessage {
+export interface OscMessage {
   address: string;
   args: OscArg[];
 }
 
-interface OscArg {
+export interface OscArg {
   type: OscType;
   value: OscValue;
 }
 
-interface OscBundle {
+export interface OscBundle {
   timeTag: number;
   packets: OscMessage[];
 }
 
-interface OscEncodeOptions {
+export interface OscEncodeOptions {
   protocol?: OscProtocol;
 }
 
