@@ -11,22 +11,14 @@
     "publish-jsr": "deno task build-wasm && deno publish",
     "publish-npm": "deno task build-wasm && deno task build-npm && cd npm && npm publish --access public"
   },
-  "include": [
-    "osc_wasm.js",
-    "osc_wasm.d.ts",
-    "osc_wasm_bg.wasm",
-    "osc_wasm_bg.js",
-    "osc_wasm_bg.wasm.d.ts"
-  ],
   "publish": {
     "exclude": [
       "npm/",
+      "osc-wasm/",
       ".vscode/",
       "*.DS_Store",
       "test.ts",
-      "build_*.ts",
-      "!pkg/",
-      "!osc-wasm/"
+      "build_npm.ts"
     ]
   },
   "imports": {

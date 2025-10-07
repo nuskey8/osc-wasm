@@ -1,7 +1,7 @@
 import { copy } from "@std/fs/copy";
 import { ensureDir } from "@std/fs/ensure_dir";
 import { exists } from "@std/fs/exists";
-import { dirname, join } from "@std/path";
+import { join } from "@std/path";
 import { build } from "dnt";
 import denoJson from "./deno.json" with { type: "json" };
 
