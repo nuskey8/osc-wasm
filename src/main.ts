@@ -1,4 +1,4 @@
-import {
+import init, {
   decode as nativeDecode,
   encode as nativeEncode,
 } from "./osc_wasm.js";
@@ -8,6 +8,8 @@ import type {
   WasmOscMessage,
   WasmOscValue,
 } from "./osc_wasm.d.ts";
+
+await init();
 
 export type OscProtocol = "udp" | "tcp";
 

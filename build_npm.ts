@@ -10,9 +10,9 @@ const outDir = "./npm";
 await ensureDir(outDir);
 
 // Ensure the wasm file is present in pkg
-if (!(await exists("pkg/osc_wasm_bg.wasm"))) {
+if (!(await exists("src/osc_wasm_bg.wasm"))) {
   console.warn(
-    "warning: pkg/osc_wasm_bg.wasm not found. Make sure wasm build ran.",
+    "warning: src/osc_wasm_bg.wasm not found. Make sure wasm build ran.",
   );
 }
 
@@ -40,5 +40,5 @@ await build({
   scriptModule: false,
 });
 
-await copy("pkg/osc_wasm_bg.wasm", join(outDir, "esm/pkg/osc_wasm_bg.wasm"))
-await copy("pkg/osc_wasm_bg.wasm", join(outDir, "src/pkg/osc_wasm_bg.wasm"))
+await copy("src/osc_wasm_bg.wasm", join(outDir, "esm/osc_wasm_bg.wasm"), {  overwrite: true })
+await copy("src/osc_wasm_bg.wasm", join(outDir, "src/osc_wasm_bg.wasm"), {  overwrite: true })

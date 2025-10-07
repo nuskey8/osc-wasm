@@ -6,7 +6,7 @@
   "exports": "./src/main.ts",
   "tasks": {
     "dev": "deno run --watch src/main.ts",
-    "build-wasm": "wasm-pack build osc-wasm --no-pack --out-dir ../src --release && rm src/.gitignore",
+    "build-wasm": "wasm-pack build osc-wasm --target web --no-pack --out-dir ../src --release && rm src/.gitignore",
     "build-npm": "deno run -A build_npm.ts",
     "publish-jsr": "deno task build-wasm && deno publish",
     "publish-npm": "deno task build-wasm && deno task build-npm && cd npm && npm publish --access public"
@@ -22,8 +22,8 @@
     ]
   },
   "imports": {
-    "@std/assert": "jsr:@std/assert@1",
-    "@std/fs": "jsr:@std/fs@1",
+    "@std/assert": "jsr:@std/assert@^1.0.14",
+    "@std/fs": "jsr:@std/fs@^1.0.19",
     "@std/path": "https://deno.land/std@0.201.0/path/mod.ts",
     "@std/fs/ensure_dir": "https://deno.land/std@0.201.0/fs/ensure_dir.ts",
     "@std/fs/exists": "https://deno.land/std@0.201.0/fs/exists.ts",
