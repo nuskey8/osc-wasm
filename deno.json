@@ -6,7 +6,7 @@
   "exports": "./src/main.ts",
   "tasks": {
     "dev": "deno run --watch src/main.ts",
-    "build-wasm": "wasm-pack build osc-wasm --target web --out-dir ../pkg --release && deno run --allow-read --allow-write build_wasm.ts",
+    "build-wasm": "wasm-pack build osc-wasm --target web --out-dir ../pkg --release",
     "build-npm": "deno run -A build_npm.ts",
     "publish-jsr": "deno task build-wasm && deno publish",
     "publish-npm": "deno task build-wasm && deno task build-npm && cd npm && npm publish --access public"
