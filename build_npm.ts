@@ -47,6 +47,10 @@ await build({
   },
   test: false,
   shims: {},
+  compilerOptions: {
+    lib: ["DOM", "ES2022"],
+    target: "ES2022",
+  },
   scriptModule: false,
 });
 
