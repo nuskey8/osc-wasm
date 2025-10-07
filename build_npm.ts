@@ -44,15 +44,9 @@ await build({
       "osc_wasm_bg.js",
       "osc_wasm_bg.wasm.d.ts",
     ],
-    devDependencies: {
-      "@types/ws": "^8.18.1"
-    }
   },
   test: false,
-  shims: {
-    blob: true,
-    webSocket: true,
-  },
+  shims: {},
   scriptModule: false,
 });
 
