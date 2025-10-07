@@ -33,7 +33,7 @@ $ deno add jsr:@nuskey8/osc-wasm
 
 ```ts
 const port = osc.WebSocketPort({
-	"ws://example.com:3000",
+	url: "ws://example.com:3000",
 	protocol: "tcp", // UDP or TCP
 });
 
