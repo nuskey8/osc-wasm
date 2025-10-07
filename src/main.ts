@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 import init, {
   decode as nativeDecode,
   encode as nativeEncode,
