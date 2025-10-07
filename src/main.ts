@@ -21,6 +21,7 @@ export interface WebSocketPortOptions {
 
 export interface OscPort {
   open(): void;
+  close(): void;
   on(event: "ready", callback: () => void): void;
   on(event: "message", callback: (msg: OscMessage) => void): void;
   on(event: "bundle", callback: (msg: OscBundle) => void): void;
@@ -50,6 +51,14 @@ export interface OscBundle {
 export interface OscEncodeOptions {
   protocol?: OscProtocol;
 }
+
+type onMethod = {
+  (event: "ready", callback: () => void): void;
+  (event: "message", callback: (msg: OscMessage) => void): void;
+  (event: "bundle", callback: (msg: OscBundle) => void): void;
+  (event: "error", callback: (error: unknown) => void): void;
+  (event: "close", callback: () => void): void;
+};
 
 function decode(
   data: Uint8Array,
@@ -202,14 +211,6 @@ function WebSocketPort(options: WebSocketPortOptions): OscPort {
     }
   }
 
-  type onMethod = {
-    (event: "ready", callback: () => void): void;
-    (event: "message", callback: (msg: OscMessage) => void): void;
-    (event: "bundle", callback: (msg: OscBundle) => void): void;
-    (event: "error", callback: (error: unknown) => void): void;
-    (event: "close", callback: () => void): void;
-  };
-
   const on: onMethod = (
     event: "ready" | "message" | "bundle" | "error" | "close",
     callback:
@@ -231,6 +232,9 @@ function WebSocketPort(options: WebSocketPortOptions): OscPort {
       const encoded = encode(msg, { protocol: options.protocol });
       ws.send(encoded);
     },
+    close() {
+      ws.close();
+    }
   };
 }
 
