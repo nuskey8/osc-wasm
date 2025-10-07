@@ -1,12 +1,12 @@
 {
   "name": "@nuskey8/osc-wasm",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "license": "MIT",
   "description": "Open Sound Control (OSC) library implemented in WebAssembly/Rust for browsers and servers",
   "exports": "./src/main.ts",
   "tasks": {
     "dev": "deno run --watch src/main.ts",
-    "build-wasm": "wasm-pack build osc-wasm --target web --out-dir ../pkg --release",
+    "build-wasm": "wasm-pack build osc-wasm --no-pack --out-dir ../src --release && rm src/.gitignore",
     "build-npm": "deno run -A build_npm.ts",
     "publish-jsr": "deno task build-wasm && deno publish",
     "publish-npm": "deno task build-wasm && deno task build-npm && cd npm && npm publish --access public"
